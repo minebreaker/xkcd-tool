@@ -9,7 +9,7 @@ dependencies {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = 1.11
+    kotlinOptions.jvmTarget = 11
 }
 
 jar {

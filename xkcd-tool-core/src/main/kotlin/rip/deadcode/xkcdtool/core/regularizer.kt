@@ -27,7 +27,7 @@ fun regularize(input: Array<String>): List<String> {
         .map { stripAccents(it) }
         .map { if (it.endsWith(",")) it.dropLast(1) else it }
         .map { it.replace("\'", "") }
-        .map { if (it.startsWith("(") && it.endsWith(")")) it.substring(1..it.length) else it }
+        .map { if (it.startsWith("(") && it.endsWith(")")) it.drop(1).dropLast(1) else it }
         .flatMap { it.split("-", "_", ":", ";") }
         .flatMap {
             when {

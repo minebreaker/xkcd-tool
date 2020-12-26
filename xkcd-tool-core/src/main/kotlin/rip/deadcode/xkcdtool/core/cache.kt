@@ -24,5 +24,3 @@ data class CachedEntry(
     val url: String,
     val cachedDate: String
 )
-
-

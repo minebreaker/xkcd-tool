@@ -17,8 +17,8 @@ fun parseArg(jvmArg: Array<String>): Config {
             val rest = tokens.subList(1, tokens.size)
 
             val nextConfig = when (token) {
-                "--url", "l" -> current.copy(urlMode = true)
-                "--explain", "e" -> current.copy(urlMode = true)
+                "--url", "-l" -> current.copy(urlMode = true)
+                "--explain", "-e" -> current.copy(explainMode = true)
                 else -> current.copy(name = current.name + token)
             }
 
