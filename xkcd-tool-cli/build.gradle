@@ -1,0 +1,25 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.4.21'
+}
+
+dependencies {
+    implementation(
+            project(':xkcd-tool-core')
+    )
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = 1.11
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'rip.deadcode.xkcdtool.cli.Main'
+        )
+    }
+
+    // Fat jar
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+}
