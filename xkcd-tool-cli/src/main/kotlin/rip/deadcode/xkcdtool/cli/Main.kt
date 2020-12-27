@@ -10,8 +10,6 @@ import rip.deadcode.xkcdtool.core.idToComicUrl
 import rip.deadcode.xkcdtool.core.idToExplainUrl
 import rip.deadcode.xkcdtool.core.match
 import rip.deadcode.xkcdtool.core.regularize
-import java.awt.Desktop
-import java.net.URI
 import java.util.*
 
 
@@ -75,7 +73,7 @@ object Main {
         if (config.urlMode) {
             println(url)
         } else {
-            Desktop.getDesktop().browse(URI(url))
+            openBrowser(url)
         }
     }
 }
