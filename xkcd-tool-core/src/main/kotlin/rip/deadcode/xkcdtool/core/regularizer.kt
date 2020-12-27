@@ -3,8 +3,6 @@ package rip.deadcode.xkcdtool.core
 import java.text.Normalizer
 
 
-fun regularize(input: String): List<String> = regularize(input.split(" ").toTypedArray())
-
 /**
  * This functions regularizes input query to (which I call) the canonical xkcd name.
  * Canonicalization is done as following:
@@ -21,8 +19,9 @@ fun regularize(input: String): List<String> = regularize(input.split(" ").toType
  *
  * Note: we don't remove non-ascii characters
  */
-fun regularize(input: Array<String>): List<String> {
+fun regularize(input: String): List<String> {
     return input
+        .split(" ")
         .map { it.toLowerCase() }
         .map { stripAccents(it) }
         .map { if (it.endsWith(",")) it.dropLast(1) else it }
