@@ -4,7 +4,6 @@ CLI tool to view and search xkcd comics (unofficial)
 
 ```bash
 # Opens a browser to show the comic
-# `Desktop.getDesktop().browse()`を使う
 $ xkcd interesting life
 $ xkcd 308
 

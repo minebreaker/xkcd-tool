@@ -2,7 +2,7 @@ package rip.deadcode.xkcdtool.cli
 
 
 data class Config(
-    val name: List<String>,
+    val query: List<String>,
     val urlMode: Boolean,
     val explainMode: Boolean
 )
@@ -19,7 +19,7 @@ fun parseArg(jvmArg: Array<String>): Config {
             val nextConfig = when (token) {
                 "--url", "-l" -> current.copy(urlMode = true)
                 "--explain", "-e" -> current.copy(explainMode = true)
-                else -> current.copy(name = current.name + token)
+                else -> current.copy(query = current.query + token)
             }
 
             parse(nextConfig, rest)

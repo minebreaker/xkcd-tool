@@ -13,8 +13,10 @@ object Toolbox {
     var httpClient: HttpTransport = NetHttpTransport()
     var baseUrl = "https://xkcd.com/"
     var indexUrl = "${baseUrl}archive/"
+    var randomUrl = "https://c.xkcd.com/random/comic/"
 
     var explainBaseUrl = "https://www.explainxkcd.com/"
+    var explainRandomUrl = "${explainBaseUrl}wiki/index.php/Special:Random"
 
     var gson = Gson()
 }
