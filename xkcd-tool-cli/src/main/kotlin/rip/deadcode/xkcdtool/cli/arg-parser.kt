@@ -4,7 +4,8 @@ package rip.deadcode.xkcdtool.cli
 data class Config(
     val query: List<String>,
     val urlMode: Boolean,
-    val explainMode: Boolean
+    val explainMode: Boolean,
+    val imageMode: Boolean
 )
 
 fun parseArg(jvmArg: Array<String>): Config {
@@ -19,6 +20,7 @@ fun parseArg(jvmArg: Array<String>): Config {
             val nextConfig = when (token) {
                 "--url", "-l" -> current.copy(urlMode = true)
                 "--explain", "-e" -> current.copy(explainMode = true)
+                "--image", "-i" -> current.copy(imageMode = true)  // TODO
                 else -> current.copy(query = current.query + token)
             }
 
@@ -27,7 +29,7 @@ fun parseArg(jvmArg: Array<String>): Config {
 
     }
 
-    val defaultConfig = Config(listOf(), false, false)
+    val defaultConfig = Config(listOf(), false, false, false)
     val (config) = parse(defaultConfig, jvmArg.asList())
     return config
 }

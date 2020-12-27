@@ -14,11 +14,17 @@ import java.awt.Desktop
 import java.net.URI
 import java.util.*
 
+
 object Main {
     @JvmStatic
     fun main(args: Array<String>) {
 
         val config = parseArg(args)
+
+        if (config.query.isEmpty()) {
+            println("Usage: xkcd [comic name] (flags)")
+            return
+        }
 
         val possibleId = isId(config.query)
         val url: String = when {
@@ -47,21 +53,21 @@ object Main {
                     } else {
                         idToComicUrl(id)
                     }
-                }
-
-                val index = askIndex()
-
-                val matchedOptional = match(config.query, index.stream()) { e -> regularize(e.rawTitle) }
-                if (matchedOptional.isEmpty) {
-                    println("No matched comic found.")
-                    return
-                }
-                val matched = matchedOptional.get()
-
-                if (config.explainMode) {
-                    idToExplainUrl(matched.id)
                 } else {
-                    idToComicUrl(matched.id)
+                    val index = askIndex()
+
+                    val matchedOptional = match(config.query, index.stream()) { e -> regularize(e.rawTitle) }
+                    if (matchedOptional.isEmpty) {
+                        println("No matched comic found.")
+                        return
+                    }
+                    val matched = matchedOptional.get()
+
+                    if (config.explainMode) {
+                        idToExplainUrl(matched.id)
+                    } else {
+                        idToComicUrl(matched.id)
+                    }
                 }
             }
         }
