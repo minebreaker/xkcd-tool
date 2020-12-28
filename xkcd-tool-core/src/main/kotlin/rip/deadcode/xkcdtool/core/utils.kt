@@ -1,5 +1,9 @@
 package rip.deadcode.xkcdtool.core
 
+import rip.deadcode.xkcdtool.core.OutputType.EXPLAIN
+import rip.deadcode.xkcdtool.core.OutputType.IMAGE
+import rip.deadcode.xkcdtool.core.OutputType.JSON
+import rip.deadcode.xkcdtool.core.OutputType.NORMAL
 import java.util.*
 
 
@@ -18,52 +22,80 @@ fun isId(query: List<String>): OptionalInt {
     }
 }
 
-fun askUrl(query: List<String>, isExplainMode: Boolean): Optional<String> {
+enum class OutputType {
+    NORMAL,
+    EXPLAIN,
+    IMAGE,
+    JSON
+}
+
+fun askUrl(query: List<String>, output: OutputType): Optional<String> {
 
     val possibleId = isId(query)
-    val url = when {
-        isRandom(query) -> {
-            if (isExplainMode) {
-                Toolbox.explainRandomUrl
-            } else {
-                Toolbox.randomUrl
+    return when {
+        isRandom(query) -> Optional.of(
+            when (output) {
+                NORMAL -> Toolbox.randomUrl
+                EXPLAIN -> Toolbox.explainRandomUrl
+                IMAGE -> TODO()
+                JSON -> TODO()
             }
-        }
-        isLatest(query) -> {
-            // We just use base url for the latest comic
-            if (isExplainMode) {
-                Toolbox.explainBaseUrl
-            } else {
-                Toolbox.baseUrl
+        )
+        isLatest(query) -> Optional.of(
+            when (output) {
+                // We just use base url for the latest comic
+                NORMAL -> Toolbox.baseUrl
+                EXPLAIN -> Toolbox.explainBaseUrl
+                IMAGE -> TODO()
+                JSON -> TODO()
             }
-        }
+        )
         else -> {
-            if (possibleId.isPresent) {
-                val id = possibleId.asInt
-                val _json = askJsonFromId(id)  // Make sure the id exists
-                // TODO: if 404 fallback to index search
-                if (isExplainMode) {
-                    idToExplainUrl(id)
-                } else {
-                    idToComicUrl(id)
+            possibleId
+                .flatMap { id ->
+                    if (output == JSON) {
+                        // // If the output is json, just convert the given id to the url
+                        // TODO: JSON or JSON url?
+                        Optional.of(idToJsonUrl(id))
+                        TODO()
+                    } else {
+                        // Otherwise, make sure the id exists
+                        askJsonFromId(id).map { json ->
+                            when (output) {
+                                NORMAL -> idToComicUrl(id)
+                                EXPLAIN -> idToExplainUrl(id)
+                                IMAGE -> json.img
+                                JSON -> throw Error("Unreachable")
+                            }
+                        }
+                    }
                 }
-            } else {
-                val index = askIndex()
-
-                val matchedOptional = match(query, index.stream()) { e -> regularize(e.rawTitle) }
-                if (matchedOptional.isEmpty) {
-                    return Optional.empty()
+                .or {
+                    val index = askIndex()
+                    match(query, index.stream()) { e -> regularize(e.rawTitle) }.map { matched ->
+                        when (output) {
+                            NORMAL -> idToComicUrl(matched.id)
+                            EXPLAIN -> idToExplainUrl(matched.id)
+                            IMAGE -> {
+                                askJsonFromId(matched.id).map { json -> json.img }
+                                    .orElseThrow()  // TODO: what if query is matched but json is not found?
+                            }
+                            JSON -> TODO()
+                        }
+                    }
                 }
-                val matched = matchedOptional.get()
-
-                if (isExplainMode) {
-                    idToExplainUrl(matched.id)
-                } else {
-                    idToComicUrl(matched.id)
-                }
-            }
         }
     }
+}
 
-    return Optional.ofNullable(url)
+fun <T : Any> OptionalInt.map(f: (Int) -> T) = if (this.isPresent) {
+    Optional.of(f(this.asInt))
+} else {
+    Optional.empty()
+}
+
+fun <T : Any> OptionalInt.flatMap(f: (Int) -> Optional<T>) = if (this.isPresent) {
+    f(this.asInt)
+} else {
+    Optional.empty()
 }

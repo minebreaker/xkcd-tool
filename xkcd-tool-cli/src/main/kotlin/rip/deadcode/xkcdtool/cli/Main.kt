@@ -1,5 +1,6 @@
 package rip.deadcode.xkcdtool.cli
 
+import rip.deadcode.xkcdtool.core.OutputType
 import rip.deadcode.xkcdtool.core.askUrl
 
 
@@ -14,7 +15,9 @@ object Main {
             return
         }
 
-        val possibleUrl = askUrl(config.query, config.explainMode)
+        val mode = if (config.explainMode) OutputType.EXPLAIN else OutputType.NORMAL
+
+        val possibleUrl = askUrl(config.query, mode)
         if (possibleUrl.isPresent) {
             val url = possibleUrl.get()
             if (config.urlMode) {

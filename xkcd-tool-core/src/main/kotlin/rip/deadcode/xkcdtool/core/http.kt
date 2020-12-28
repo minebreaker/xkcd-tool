@@ -12,6 +12,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.io.UncheckedIOException
 import java.nio.charset.StandardCharsets
+import java.util.*
 
 
 /**
@@ -74,21 +75,23 @@ fun askIndex(): List<IndexEntry> {
     }
 }
 
-fun askJsonFromId(id: Int): XkcdJson {
-    try {
+fun askJsonFromId(id: Int): Optional<XkcdJson> {
+    return try {
         val response = httpClient.createRequestFactory()
             .buildGetRequest(GenericUrl(idToJsonUrl(id)))
             .execute()
 
         // TODO: status check
 
-        return gson.fromJson(
-            InputStreamReader(BufferedInputStream(response.content), StandardCharsets.UTF_8),
-            XkcdJson::class.java
+        Optional.of(
+            gson.fromJson(
+                InputStreamReader(BufferedInputStream(response.content), StandardCharsets.UTF_8),
+                XkcdJson::class.java
+            )
         )
 
     } catch (e: IOException) {
-        throw UncheckedIOException(e)  // FIXME
+        Optional.empty()
     }
 }
 
