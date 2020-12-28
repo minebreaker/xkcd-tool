@@ -52,7 +52,6 @@ fun askUrl(query: List<String>, isExplainMode: Boolean): Optional<String> {
 
                 val matchedOptional = match(query, index.stream()) { e -> regularize(e.rawTitle) }
                 if (matchedOptional.isEmpty) {
-                    println("No matched comic found.")
                     return Optional.empty()
                 }
                 val matched = matchedOptional.get()

@@ -23,7 +23,7 @@ object Main {
                 openBrowser(url)
             }
         } else {
-            println("No match found.")
+            println("No matched comic found.")
         }
     }
 }
