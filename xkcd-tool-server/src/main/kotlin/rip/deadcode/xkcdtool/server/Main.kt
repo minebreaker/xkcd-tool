@@ -1,7 +1,9 @@
 package rip.deadcode.xkcdtool.server
 
 import org.eclipse.jetty.server.HttpConfiguration
+import org.eclipse.jetty.server.HttpConnectionFactory
 import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.server.ServerConnector
 
 
 object Main {
@@ -11,10 +13,14 @@ object Main {
         val config = HttpConfiguration().also {
             it.sendServerVersion = false
         }
+        val connectionFactory = HttpConnectionFactory(config)
 
         val port = args.firstOrNull()?.toIntOrNull() ?: 8080
-        Server(port)
-            .also { it.handler = Handler() }
+        Server()
+            .also {
+                it.connectors = arrayOf(ServerConnector(it, connectionFactory).also { it.port = port })
+                it.handler = Handler()
+            }
             .start()
     }
 }
