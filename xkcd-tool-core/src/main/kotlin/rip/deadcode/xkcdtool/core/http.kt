@@ -75,10 +75,10 @@ fun askIndex(): List<IndexEntry> {
     }
 }
 
-fun askJsonFromId(id: Int): Optional<XkcdJson> {
+fun askJson(url: String): Optional<XkcdJson> {
     return try {
         val response = httpClient.createRequestFactory()
-            .buildGetRequest(GenericUrl(idToJsonUrl(id)))
+            .buildGetRequest(GenericUrl(url))
             .execute()
 
         // TODO: status check
@@ -93,6 +93,10 @@ fun askJsonFromId(id: Int): Optional<XkcdJson> {
     } catch (e: IOException) {
         Optional.empty()
     }
+}
+
+fun askJsonFromId(id: Int): Optional<XkcdJson> {
+    return askJson(idToJsonUrl(id))
 }
 
 fun idToJsonUrl(id: Int) = "${baseUrl}${id}/info.0.json"

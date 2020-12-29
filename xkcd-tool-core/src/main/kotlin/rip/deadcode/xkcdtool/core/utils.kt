@@ -5,6 +5,7 @@ import rip.deadcode.xkcdtool.core.OutputType.IMAGE
 import rip.deadcode.xkcdtool.core.OutputType.JSON
 import rip.deadcode.xkcdtool.core.OutputType.NORMAL
 import java.util.*
+import kotlin.random.asKotlinRandom
 
 
 fun isRandom(query: List<String>) = query.size == 1 && query.first() == "random"
@@ -33,23 +34,28 @@ fun askUrl(query: List<String>, output: OutputType): Optional<String> {
 
     val possibleId = isId(query)
     return when {
-        isRandom(query) -> Optional.of(
+        isRandom(query) ->
             when (output) {
-                NORMAL -> Toolbox.randomUrl
-                EXPLAIN -> Toolbox.explainRandomUrl
-                IMAGE -> TODO()
-                JSON -> TODO()
+                NORMAL -> Optional.of(Toolbox.randomUrl)
+                EXPLAIN -> Optional.of(Toolbox.explainRandomUrl)
+                IMAGE -> {
+                    val index = askIndex()
+                    getRandomId(index)
+                        .flatMap { id -> askJsonFromId(id) }
+                        .map { json -> json.img }
+                }
+                JSON -> {
+                    val index = askIndex()
+                    getRandomId(index).map { id -> idToJsonUrl(id) }
+                }
             }
-        )
-        isLatest(query) -> Optional.of(
-            when (output) {
-                // We just use base url for the latest comic
-                NORMAL -> Toolbox.baseUrl
-                EXPLAIN -> Toolbox.explainBaseUrl
-                IMAGE -> TODO()
-                JSON -> TODO()
-            }
-        )
+        isLatest(query) -> when (output) {
+            // We just use base url for the latest comic
+            NORMAL -> Optional.of(Toolbox.baseUrl)
+            EXPLAIN -> Optional.of(Toolbox.explainBaseUrl)
+            IMAGE -> askJson(Toolbox.latestJsonUrl).map { json -> json.img }
+            JSON -> Optional.of(Toolbox.latestJsonUrl)
+        }
         else -> {
             possibleId
                 .flatMap { id ->
@@ -57,7 +63,6 @@ fun askUrl(query: List<String>, output: OutputType): Optional<String> {
                         // // If the output is json, just convert the given id to the url
                         // TODO: JSON or JSON url?
                         Optional.of(idToJsonUrl(id))
-                        TODO()
                     } else {
                         // Otherwise, make sure the id exists
                         askJsonFromId(id).map { json ->
@@ -86,6 +91,11 @@ fun askUrl(query: List<String>, output: OutputType): Optional<String> {
                 }
         }
     }
+}
+
+fun getRandomId(index: List<IndexEntry>): OptionalInt {
+    val id = index.randomOrNull(Toolbox.random.asKotlinRandom())
+    return if (id == null) OptionalInt.empty() else OptionalInt.of(id.id)
 }
 
 fun <T : Any> OptionalInt.map(f: (Int) -> T) = if (this.isPresent) {
