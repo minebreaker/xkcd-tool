@@ -4,6 +4,7 @@ import com.google.api.client.http.HttpTransport
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.gson.Gson
 import java.nio.file.FileSystems
+import java.time.Clock
 import java.util.*
 
 
@@ -22,4 +23,5 @@ object Toolbox {
 
     var gson = Gson()
     var random = Random()
+    var clock = Clock.systemDefaultZone()
 }

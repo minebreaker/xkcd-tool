@@ -4,6 +4,13 @@ import rip.deadcode.xkcdtool.core.OutputType.EXPLAIN
 import rip.deadcode.xkcdtool.core.OutputType.IMAGE
 import rip.deadcode.xkcdtool.core.OutputType.JSON
 import rip.deadcode.xkcdtool.core.OutputType.NORMAL
+import rip.deadcode.xkcdtool.core.io.IndexEntry
+import rip.deadcode.xkcdtool.core.io.getIndex
+import rip.deadcode.xkcdtool.core.io.getJson
+import rip.deadcode.xkcdtool.core.io.idToComicUrl
+import rip.deadcode.xkcdtool.core.io.idToExplainUrl
+import rip.deadcode.xkcdtool.core.io.idToJsonUrl
+import rip.deadcode.xkcdtool.core.io.requestJson
 import java.util.*
 import kotlin.random.asKotlinRandom
 
@@ -39,13 +46,13 @@ fun askUrl(query: List<String>, output: OutputType): Optional<String> {
                 NORMAL -> Optional.of(Toolbox.randomUrl)
                 EXPLAIN -> Optional.of(Toolbox.explainRandomUrl)
                 IMAGE -> {
-                    val index = askIndex()
+                    val index = getIndex()
                     getRandomId(index)
-                        .flatMap { id -> askJsonFromId(id) }
+                        .flatMap { id -> getJson(id) }
                         .map { json -> json.img }
                 }
                 JSON -> {
-                    val index = askIndex()
+                    val index = getIndex()
                     getRandomId(index).map { id -> idToJsonUrl(id) }
                 }
             }
@@ -53,7 +60,7 @@ fun askUrl(query: List<String>, output: OutputType): Optional<String> {
             // We just use base url for the latest comic
             NORMAL -> Optional.of(Toolbox.baseUrl)
             EXPLAIN -> Optional.of(Toolbox.explainBaseUrl)
-            IMAGE -> askJson(Toolbox.latestJsonUrl).map { json -> json.img }
+            IMAGE -> requestJson(Toolbox.latestJsonUrl).map { json -> json.img }
             JSON -> Optional.of(Toolbox.latestJsonUrl)
         }
         else -> {
@@ -65,7 +72,7 @@ fun askUrl(query: List<String>, output: OutputType): Optional<String> {
                         Optional.of(idToJsonUrl(id))
                     } else {
                         // Otherwise, make sure the id exists
-                        askJsonFromId(id).map { json ->
+                        getJson(id).map { json ->
                             when (output) {
                                 NORMAL -> idToComicUrl(id)
                                 EXPLAIN -> idToExplainUrl(id)
@@ -76,13 +83,13 @@ fun askUrl(query: List<String>, output: OutputType): Optional<String> {
                     }
                 }
                 .or {
-                    val index = askIndex()
+                    val index = getIndex()
                     match(query, index.stream()) { e -> regularize(e.rawTitle) }.map { matched ->
                         when (output) {
                             NORMAL -> idToComicUrl(matched.id)
                             EXPLAIN -> idToExplainUrl(matched.id)
                             IMAGE -> {
-                                askJsonFromId(matched.id).map { json -> json.img }
+                                getJson(matched.id).map { json -> json.img }
                                     .orElseThrow()  // TODO: what if query is matched but json is not found?
                             }
                             JSON -> TODO()
