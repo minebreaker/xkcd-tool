@@ -1,6 +1,5 @@
 package rip.deadcode.xkcdtool.core.io
 
-import com.google.api.client.http.GenericUrl
 import org.jsoup.Jsoup
 import rip.deadcode.xkcdtool.core.Toolbox.baseUrl
 import rip.deadcode.xkcdtool.core.Toolbox.gson
@@ -10,19 +9,29 @@ import java.io.BufferedInputStream
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.UncheckedIOException
+import java.net.URI
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
 import java.util.*
 
 
 fun requestIndex(): List<IndexEntry> {
     try {
-        val response = httpClient.createRequestFactory()
-            .buildGetRequest(GenericUrl(indexUrl))
-            .execute()
+        val response = httpClient
+            .send(
+                HttpRequest
+                    .newBuilder()
+                    .GET()
+                    .uri(URI(indexUrl))
+                    .build(),
+                HttpResponse.BodyHandlers.ofInputStream()
+            )
+            .body()
 
         // TODO: status check
 
-        val document = Jsoup.parse(response.content, "UTF-8", baseUrl)  // FIXME
+        val document = Jsoup.parse(response, "UTF-8", baseUrl)  // FIXME
         val container = document.getElementById("middleContainer")
         val links = container.getElementsByTag("a")
 
@@ -39,15 +48,22 @@ fun requestIndex(): List<IndexEntry> {
 
 fun requestJson(url: String): Optional<XkcdJson> {
     return try {
-        val response = httpClient.createRequestFactory()
-            .buildGetRequest(GenericUrl(url))
-            .execute()
+        val response = httpClient
+            .send(
+                HttpRequest
+                    .newBuilder()
+                    .GET()
+                    .uri(URI(url))
+                    .build(),
+                HttpResponse.BodyHandlers.ofInputStream()
+            )
+            .body()
 
         // TODO: status check
 
         Optional.of(
             gson.fromJson(
-                InputStreamReader(BufferedInputStream(response.content), StandardCharsets.UTF_8),
+                InputStreamReader(BufferedInputStream(response), StandardCharsets.UTF_8),
                 XkcdJson::class.java
             )
         )

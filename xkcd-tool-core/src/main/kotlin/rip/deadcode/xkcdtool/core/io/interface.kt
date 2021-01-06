@@ -1,5 +1,6 @@
 package rip.deadcode.xkcdtool.core.io
 
+import com.google.gson.annotations.SerializedName
 import rip.deadcode.xkcdtool.core.Toolbox
 import java.util.*
 
@@ -26,6 +27,7 @@ data class XkcdJson(
     val num: Int,
     val link: String,
     val title: String,
+    @SerializedName("safe_title")
     val safeTitle: String,
     val transcript: String,
     val img: String,
@@ -36,9 +38,14 @@ data class XkcdJson(
     val day: String
 )
 
+/**
+ * Index data of the comic.
+ * @param id Comic ID aka the `num` field of the comic
+ * @param title Original title
+ */
 data class IndexEntry(
     val id: Int,
-    val rawTitle: String
+    val title: String
 )
 
 /*
@@ -50,28 +57,6 @@ fun getIndex(): List<IndexEntry> {
 
 fun getJson(id: Int): Optional<XkcdJson> {
     return getCachedJson(id)
-}
-
-fun mapToXkcdJson(map: Map<String, Any>): Optional<XkcdJson> {
-    val num = map["num"]
-    val link = map["link"]
-    val title = map["title"]
-    val safeTitle = map["safe_title"]
-    val transcript = map["transcript"]
-    val img = map["img"]
-    val alt = map["alt"]
-    val news = map["news"]
-    val year = map["year"]
-    val month = map["month"]
-    val day = map["day"]
-
-    return if (num is Int && link is String && title is String && safeTitle is String && transcript is String && img is String && alt is String &&
-        news is String && year is String && month is String && day is String
-    ) {
-        Optional.of(XkcdJson(num, link, title, safeTitle, transcript, img, alt, news, year, month, day))
-    } else {
-        Optional.empty()
-    }
 }
 
 fun idToJsonUrl(id: Int) = "${Toolbox.baseUrl}${id}/info.0.json"

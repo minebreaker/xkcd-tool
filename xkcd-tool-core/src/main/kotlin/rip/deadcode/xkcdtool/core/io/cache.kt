@@ -1,25 +1,29 @@
 package rip.deadcode.xkcdtool.core.io
 
+import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import rip.deadcode.xkcdtool.core.Toolbox
+import rip.deadcode.xkcdtool.core.Toolbox.gson
 import rip.deadcode.xkcdtool.core.internal.get
-import rip.deadcode.xkcdtool.core.internal.optional
-import java.io.IOException
 import java.nio.file.Files
+import java.nio.file.StandardOpenOption.CREATE
+import java.nio.file.StandardOpenOption.DSYNC
+import java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
+import java.nio.file.StandardOpenOption.WRITE
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.streams.toList
 
 /*
- * xkcd-tool will cache indexes of comics in a `~/.xkcd-tool/index` file.
+ * xkcd-tool will cache indexes of comics in a `~/.xkcd-tool/` directory.
  *
- * The file is a JSON-L formatted for each line is a metadata of the comics.
- * The metadata JSON format is either:
- *   * a metadata returned by the xkcd JSON format(represented by the class `XkcdJson`)
- *   * a cache entry represented by the class `CachedEntry`
+ * A `index` file is a JSON-L formatted for each line is a metadata of the comics.
+ * The metadata JSON format is represented as `IndexEntry`.
+ *
+ * A file named with numbers is a JSON of the comic which file name is an id of the comic it represent.
+ * Format is `XkcdJson`.
  */
 
 
@@ -35,35 +39,13 @@ val indexCache = AtomicReference(IndexCache(listOf(), ZonedDateTime.ofInstant(In
  * This will never expire since returned JSON is hardly changing.
  * The key is an id of the entry.
  */
-val jsonCache = CacheBuilder
+val jsonCache: Cache<Int, XkcdJson> = CacheBuilder
     .newBuilder()
-    .build<Int, XkcdJson>()
+    .build()
 
+fun getIndexPath() = Toolbox.cachePath.resolve("index")
+fun getJsonPath(id: Int) = Toolbox.cachePath.resolve(id.toString())
 
-/**
- * Raw data of the cache.
- *
- * @param id Comic ID aka the `num` field of the comic
- * @param title Original title
- * @param url Url of the image (not comic itself)
- */
-data class CachedEntry(
-    val id: Int,
-    val title: String,
-    val url: String,
-)
-
-fun mapToCachedEntry(map: Map<String, Any>): Optional<CachedEntry> {
-    val id = map["id"]
-    val title = map["title"]
-    val url = map["url"]
-
-    return if (id is Int && title is String && url is String) {
-        Optional.of(CachedEntry(id, title, url))
-    } else {
-        Optional.empty()
-    }
-}
 
 fun getCachedIndex(): List<IndexEntry> {
 
@@ -79,82 +61,72 @@ fun getCachedIndex(): List<IndexEntry> {
 }
 
 fun getCachedJson(id: Int): Optional<XkcdJson> {
-    return jsonCache.get(id).or { readJson(id) }
+    val json = jsonCache.get(id)
+
+    return json.or {
+        val newJson = readJson(id)
+        newJson.ifPresent {
+            jsonCache.put(it.num, it)
+        }
+        newJson
+    }
 }
 
-fun readFile(): Pair<List<XkcdJson>, List<CachedEntry>> {
-    val lines = Files.readAllLines(Toolbox.cachePath)
-
-    @Suppress("UNCHECKED_CAST")
-    val maps = lines.map { Toolbox.gson.fromJson(it, Map::class.java) as Map<String, Any> }
-
-    val xkcdJsons = maps
-        .stream()
-        .filter { it.containsKey("num") }
-        .flatMap { mapToXkcdJson(it).stream() }
-        .toList()
-    val cachedEntries = maps
-        .stream()
-        .filter { it.containsKey("id") }
-        .flatMap { mapToCachedEntry(it).stream() }
-        .toList()
-
-    return xkcdJsons to cachedEntries
-}
 
 fun readIndex(): List<IndexEntry> {
 
-    val (xkcdJsons, cachedEntries) = readFile()
+    val lines = if (Files.exists(getIndexPath())) {
+        Files.readAllLines(getIndexPath())
+    } else {
+        listOf()
+    }
 
-    // 1. Update index
-    val cachedIndex = xkcdJsons.map { IndexEntry(it.num, it.title) } + cachedEntries.map { IndexEntry(it.id, it.title) }
+    val index = lines.map { gson.fromJson(it, IndexEntry::class.java) }
 
-    val newIndex = if (cachedIndex.isNotEmpty()) {
-        cachedIndex
+    // 1. Read index
+    // TODO: check index date expiration
+
+    val newIndex = if (index.isNotEmpty()) {
+        index
     } else {
         // Download index if not cached
         val newIndex = requestIndex()
-        writeCacheFile((xkcdJsons + cachedEntries))
+        writeIndex(newIndex)
         newIndex
     }
 
     indexCache.set(IndexCache(newIndex, ZonedDateTime.now()))
-
-    // 2. Update json
-    xkcdJsons.forEach {
-        jsonCache.put(it.num, it)
-    }
 
     return newIndex
 }
 
 fun readJson(id: Int): Optional<XkcdJson> {
 
-    val (xkcdJsons, cachedEntries) = readFile()
-    val json = xkcdJsons.firstOrNull().optional()
+    val path = getJsonPath(id)
 
-    return if (json.isPresent) {
-        json
+    return if (Files.exists(path)) {
+        // TODO catch Exception
+        val str = Files.readString(path)
+        val json = gson.fromJson(str, XkcdJson::class.java)
+        Optional.of(json)
     } else {
         // Download json if not cached
         val newJson = requestJson(idToJsonUrl(id))
-
-        if (newJson.isPresent) {
-            val newJsonRaw = newJson.get()
-            val newJsons = xkcdJsons.map { if (it.num == newJsonRaw.num) newJsonRaw else it }
-            writeCacheFile((newJsons + cachedEntries))
+        newJson.ifPresent {
+            writeJson(it)
         }
-
         newJson
     }
 }
 
-fun writeCacheFile(lines: List<Any>) {
-    try {
-        // TODO: Random write is better
-        Files.write(Toolbox.cachePath, lines.map { Toolbox.gson.toJson(it) })
-    } catch (e: IOException) {
-        // Just ignore the error since cache write is not a fatal operation
-        e.printStackTrace()
-    }
+val options = arrayOf(CREATE, WRITE, TRUNCATE_EXISTING, DSYNC)
+
+fun writeIndex(index: List<IndexEntry>) {
+    Files.createDirectories(Toolbox.cachePath)
+    Files.write(getIndexPath(), index.map { gson.toJson(it) }, *options)
+}
+
+fun writeJson(json: XkcdJson) {
+    Files.createDirectories(Toolbox.cachePath)
+    Files.writeString(getJsonPath(json.num), gson.toJson(json), *options)
 }

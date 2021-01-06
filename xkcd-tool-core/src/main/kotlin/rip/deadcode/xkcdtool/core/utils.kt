@@ -84,7 +84,7 @@ fun askUrl(query: List<String>, output: OutputType): Optional<String> {
                 }
                 .or {
                     val index = getIndex()
-                    match(query, index.stream()) { e -> regularize(e.rawTitle) }.map { matched ->
+                    match(query, index.stream()) { e -> regularize(e.title) }.map { matched ->
                         when (output) {
                             NORMAL -> idToComicUrl(matched.id)
                             EXPLAIN -> idToExplainUrl(matched.id)
