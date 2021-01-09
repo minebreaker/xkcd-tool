@@ -8,6 +8,10 @@ import rip.deadcode.xkcdtool.core.Toolbox
 import rip.deadcode.xkcdtool.core.Toolbox.gson
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
 
 class CacheTest {
@@ -98,6 +102,81 @@ class CacheTest {
         mockNet(xkcdJsonStr)
 
         val result = readJson(xkcdJson.num)
+
+        assertThat(result).hasValue(xkcdJson)
+    }
+
+    @Test
+    fun getCachedIndexWhenCached() {
+        mockPath()
+        mockNet("")
+        prepareMockCacheFile()
+        val mockNow = ZonedDateTime.parse("2000-01-01T00:00:00+00:00")
+        Toolbox.clock = Clock.fixed(mockNow.toInstant(), ZoneOffset.UTC)
+
+        val cache = listOf(IndexEntry(308, "Interesting Life"))
+
+        indexCache.set(IndexCache(cache, mockNow.minusMinutes(1)))
+
+        val result = getCachedIndex()
+
+        assertThat(result).isEqualTo(cache)
+    }
+
+    @Test
+    fun getCachedIndexWhenNotCached() {
+        mockPath()
+        mockNet("")
+        prepareMockCacheFile()
+        val mockNow = ZonedDateTime.parse("2000-01-01T00:00:00+00:00")
+        Toolbox.clock = Clock.fixed(mockNow.toInstant(), ZoneOffset.UTC)
+        indexCache.set(IndexCache(listOf(), mockNow.minusMinutes(1)))
+
+        val result = getCachedIndex()
+
+        assertThat(result).containsExactly(IndexEntry(cacheEntry.id, cacheEntry.title))
+    }
+
+    @Test
+    fun getCachedIndexWhenCachedButExpired() {
+        mockPath()
+        mockNet("")
+        prepareMockCacheFile()
+        Toolbox.clock = Clock.fixed(ZonedDateTime.parse("2000-01-01T00:00:00+00:00").toInstant(), ZoneOffset.UTC)
+        indexCache.set(
+            IndexCache(
+                listOf(IndexEntry(308, "Interesting Life")),
+                ZonedDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC)
+            )
+        )
+
+        val result = getCachedIndex()
+
+        assertThat(result).containsExactly(IndexEntry(cacheEntry.id, cacheEntry.title))
+    }
+
+    @Test
+    fun getCachedJsonWhenCached() {
+        mockPath()
+        mockNet("")
+        prepareMockCacheFile()
+
+        jsonCache.put(1, xkcdJson)  // Uses a dummy id to ensure the result is read from the cache
+
+        val result = getCachedJson(1)
+
+        assertThat(result).hasValue(xkcdJson)
+    }
+
+
+    @Test
+    fun getCachedJsonWhenNotCached() {
+        mockPath()
+        mockNet("")
+        prepareMockCacheFile()
+        jsonCache.invalidateAll()
+
+        val result = getCachedJson(xkcdJson.num)
 
         assertThat(result).hasValue(xkcdJson)
     }

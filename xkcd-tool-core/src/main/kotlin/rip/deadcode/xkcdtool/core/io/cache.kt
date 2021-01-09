@@ -52,7 +52,7 @@ fun getCachedIndex(): List<IndexEntry> {
     val (index, lastUpdated) = indexCache.get()
     val now = ZonedDateTime.now(Toolbox.clock)
     // If the cache is already filled, just returns them.
-    if (lastUpdated.isBefore(now.minusDays(1)) && index.isNotEmpty()) {
+    if (lastUpdated > now.minusDays(1) && index.isNotEmpty()) {
         return index
     }
 
