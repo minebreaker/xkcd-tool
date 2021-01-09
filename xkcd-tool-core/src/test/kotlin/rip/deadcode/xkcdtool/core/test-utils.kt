@@ -14,14 +14,6 @@ import java.time.Duration
 import java.util.*
 
 
-fun mockTools() {
-    Toolbox.clock = Clock.systemDefaultZone()
-
-    Toolbox.gson = Gson()
-    Toolbox.random = Random()
-    Toolbox.clock = Clock.systemDefaultZone()
-}
-
 fun mockNet(responseBody: String) {
     Toolbox.httpClient = HttpClient
         .newBuilder()
