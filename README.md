@@ -28,11 +28,11 @@ $ xkcd interesting life --explain --url
 # xkcd-tool-server
 
 ```
-https://xkcd.aaload.com/interesting_life
-https://xkcd.aaload.com/interesting-life
-https://xkcd.aaload.com/random
-https://xkcd.aaload.com/latest
-https://xkcd.aaload.com/interesting-life?explain  # redirects to explain xkcd
+https://xkcd-tool.herokuapp.com/interesting_life
+https://xkcd-tool.herokuapp.com/interesting-life
+https://xkcd-tool.herokuapp.com/random
+https://xkcd-tool.herokuapp.com/latest
+https://xkcd-tool.herokuapp.com/interesting-life?explain  # redirects to explain xkcd
 ```
 
 * Use `Accept` header to change returned content:
