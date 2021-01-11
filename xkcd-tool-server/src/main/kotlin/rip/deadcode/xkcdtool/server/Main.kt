@@ -15,7 +15,7 @@ object Main {
         }
         val connectionFactory = HttpConnectionFactory(config)
 
-        val port = args.firstOrNull()?.toIntOrNull() ?: 8080
+        val port = args.firstOrNull()?.toIntOrNull() ?: System.getenv("PORT")?.toIntOrNull() ?: 8080
         Server()
             .also {
                 it.connectors = arrayOf(ServerConnector(it, connectionFactory).also { it.port = port })
