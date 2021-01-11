@@ -28,6 +28,13 @@ class Handler : AbstractHandler() {
         // Drop `/` of the root. Other slashes are preserved as are
         val nameQuery = regularize(baseRequest.requestURI.drop(1))
 
+        if (nameQuery.first().isEmpty()) {
+            response.status = 307
+            response.addHeader("Location", "https://github.com/minebreaker/xkcd-tool")
+            baseRequest.isHandled = true
+            return
+        }
+
         val mode = guessOutputType(baseRequest).orElse(IMAGE)
 
         val redirectUrl = askUrl(nameQuery, mode)
