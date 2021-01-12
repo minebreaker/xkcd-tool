@@ -14,11 +14,9 @@ fun openBrowser(url: String) {
         os.contains("mac") -> {
             Runtime.getRuntime().exec("open $url")
         }
-        os.contains("nix") -> {
-            Runtime.getRuntime().exec("sh -c firefox $url")
-        }
+        // Assume it's linux
         else -> {
-            println("Failed to determine operating system.")
+            Runtime.getRuntime().exec("sh -c firefox $url")
         }
     }
 }
